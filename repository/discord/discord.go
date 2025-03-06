@@ -63,11 +63,11 @@ func (d *discordRepository) GetUser(ctx context.Context, token string) (entity.U
 		Get("/users/@me")
 
 	if err != nil {
-		return entity.User{}, err
+		return response, err
 	}
 
 	if resp.IsErrorState() {
-		return entity.User{}, fmt.Errorf("Error with status code: %v", resp.StatusCode)
+		return response, fmt.Errorf("Error with status code: %v", resp.StatusCode)
 	}
 
 	return response, nil
