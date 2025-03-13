@@ -3,7 +3,7 @@ package config
 import "fmt"
 
 type AppConfig struct {
-	Name     string `env:"APP_NAME" envDefault:"Mochus"`
+	Name     string `env:"APP_NAME" envDefault:"mochus"`
 	Host     string `env:"APP_HOST" envDefault:"localhost"`
 	Port     string `env:"APP_PORT" envDefault:"8083"`
 	Timezone string `env:"APP_TIMEZONE" envDefault:"Asia/Jakarta"`
