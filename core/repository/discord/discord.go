@@ -7,6 +7,9 @@ import (
 )
 
 type DiscordRepository interface {
-	GetTemporaryToken(ctx context.Context, code string) (string, error)
-	GetUser(ctx context.Context, token string) (entity.User, error)
+	GetToken(ctx context.Context, code string) (*entity.AccessToken, error)
+	GetTokenByRefresh(ctx context.Context, refreshToken string) (*entity.AccessToken, error)
+	RevokeToken(ctx context.Context, token string) error
+
+	GetUser(ctx context.Context, token string) (*entity.User, error)
 }

@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/mocha-bot/mochus/config"
 	"github.com/mocha-bot/mochus/core/module"
 	http_handler "github.com/mocha-bot/mochus/handler/http"
-	http_middleware "github.com/mocha-bot/mochus/handler/http/middleware"
 	discord_repository "github.com/mocha-bot/mochus/repository/discord"
 	zLog "github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -34,17 +32,18 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// TODO: need to add several instances several things such as (db, redis, etc)
+	e := echo.New()
+	e.Logger.SetLevel(log.LstdFlags)
+	// e.Use(http_middleware.CORS(), middleware.RequestID())
 
 	discordRepository := discord_repository.NewDiscordRepository(cfg.Discord)
 	discordUsecase := module.NewDiscordUsecase(discordRepository)
-	discordHandler := http_handler.NewDiscordHandler(cfg.Discord, discordUsecase)
-
-	e := echo.New()
-	e.Logger.SetLevel(log.LstdFlags)
-	e.Use(http_middleware.CORS(), middleware.RequestID())
+	discordHandler := http_handler.NewDiscordHandler(cfg, discordUsecase)
 
 	e.GET("/auth/discord/callback", discordHandler.OauthCallback)
+	e.GET("/", func(c echo.Context) error {
+		return c.String(200, "Hello World")
+	})
 
 	// Start server
 	go func() {

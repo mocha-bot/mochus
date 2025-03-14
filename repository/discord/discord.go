@@ -3,7 +3,6 @@ package discord_repository
 import (
 	"context"
 
-	// "encoding/base64"
 	"fmt"
 
 	"github.com/imroc/req/v3"
@@ -19,56 +18,121 @@ type discordRepository struct {
 
 func NewDiscordRepository(cfg config.DiscordConfig) repository.DiscordRepository {
 	return &discordRepository{
-		client: req.NewClient().SetBaseURL(cfg.GetBaseURL()),
+		client: req.NewClient().SetBaseURL(cfg.GetBaseURL(cfg.LatestVersion)),
 		cfg:    cfg,
 	}
 }
 
-func (d *discordRepository) GetTemporaryToken(ctx context.Context, code string) (string, error) {
-	var response TokenResponse
-	var errorResponse ErrorResponse
-	req := d.client.R()
-	resp, err := req.SetHeaders(map[string]string{
+func (d *discordRepository) GetToken(ctx context.Context, code string) (*entity.AccessToken, error) {
+	var response AccessTokenResponse
+
+	headers := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded",
-	}).
+	}
+
+	payload := map[string]string{
+		"grant_type":   GrantTypeAuthorizationCode,
+		"code":         code,
+		"redirect_uri": d.cfg.GetRedirectURI(),
+	}
+
+	req := d.client.R().
+		SetHeaders(headers).
 		SetBasicAuth(d.cfg.ClientID, d.cfg.ClientSecret).
 		SetContext(ctx).
 		SetSuccessResult(&response).
-		SetErrorResult(&errorResponse).
-		SetFormData(map[string]string{
-			"grant_type":   "authorization_code",
-			"code":         code,
-			"redirect_uri": d.cfg.GetRedirectURI(),
-		}).
-		Post("/v10/oauth2/token")
+		SetErrorResult(&response).
+		SetFormData(payload)
 
+	resp, err := req.Post("/oauth2/token")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if resp.IsErrorState() {
-		return "", fmt.Errorf("Error with status code: %v", resp.StatusCode)
+		return nil, fmt.Errorf("Error %v: %v", response.HTTPResponse.Error, response.ErrorDescription)
 	}
 
-	return response.AccessToken, nil
+	return response.AccessToken.ToEntity(), nil
 }
 
-func (d *discordRepository) GetUser(ctx context.Context, token string) (entity.User, error) {
-	var response entity.User
+func (d *discordRepository) GetTokenByRefresh(ctx context.Context, refreshToken string) (*entity.AccessToken, error) {
+	var response AccessTokenResponse
 
-	req := d.client.R()
-	resp, err := req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", token)).
+	headers := map[string]string{
+		"Content-Type": "application/x-www-form-urlencoded",
+	}
+
+	payload := map[string]string{
+		"grant_type":    GrantTypeRefreshToken,
+		"refresh_token": refreshToken,
+		"redirect_uri":  d.cfg.GetRedirectURI(),
+	}
+
+	req := d.client.R().
+		SetHeaders(headers).
+		SetBasicAuth(d.cfg.ClientID, d.cfg.ClientSecret).
 		SetContext(ctx).
 		SetSuccessResult(&response).
-		Get("/users/@me")
+		SetErrorResult(&response).
+		SetFormData(payload)
 
+	resp, err := req.Post("/oauth2/token")
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
 	if resp.IsErrorState() {
-		return response, fmt.Errorf("Error with status code: %v", resp.StatusCode)
+		return nil, fmt.Errorf("Error %v: %v", response.HTTPResponse.Error, response.HTTPResponse.ErrorDescription)
 	}
 
-	return response, nil
+	return response.AccessToken.ToEntity(), nil
+}
+
+func (d *discordRepository) RevokeToken(ctx context.Context, token string) error {
+	headers := map[string]string{
+		"Content-Type": "application/x-www-form-urlencoded",
+	}
+
+	payload := map[string]string{
+		"token":           token,
+		"token_type_hint": GrantTypeAccessToken,
+	}
+
+	req := d.client.R().
+		SetHeaders(headers).
+		SetBasicAuth(d.cfg.ClientID, d.cfg.ClientSecret).
+		SetContext(ctx).
+		SetFormData(payload)
+
+	resp, err := req.Post("/oauth2/token/revoke")
+	if err != nil {
+		return err
+	}
+
+	if resp.IsErrorState() {
+		return fmt.Errorf("Error with status code: %v", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (d *discordRepository) GetUser(ctx context.Context, token string) (*entity.User, error) {
+	var response UserResponse
+
+	req := d.client.R().
+		SetHeader("Authorization", fmt.Sprintf("Bearer %s", token)).
+		SetContext(ctx).
+		SetSuccessResult(&response)
+
+	resp, err := req.Get("/users/@me")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsErrorState() {
+		return nil, fmt.Errorf("Error %v: %v", response.HTTPResponse.Error, response.ErrorDescription)
+	}
+
+	return response.User.ToEntity(), nil
 }

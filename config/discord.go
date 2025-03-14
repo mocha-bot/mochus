@@ -8,17 +8,18 @@ const (
 )
 
 type DiscordConfig struct {
-	ClientID     string `env:"DISCORD_CLIENT_ID" envDefault:""`
-	ClientSecret string `env:"DISCORD_CLIENT_SECRET" envDefault:""`
-	RedirectURI  string `env:"DISCORD_REDIRECT_URI" envDefault:""`
+	ClientID      string `env:"DISCORD_CLIENT_ID" envDefault:""`
+	ClientSecret  string `env:"DISCORD_CLIENT_SECRET" envDefault:""`
+	RedirectURI   string `env:"DISCORD_REDIRECT_URI" envDefault:""`
+	LatestVersion string `env:"DISCORD_LATEST_VERSION" envDefault:"v10"`
 }
 
-func (d DiscordConfig) GetBaseURL() string {
-	return DiscordBaseURL
-}
+func (d DiscordConfig) GetBaseURL(version string) string {
+	if version == "" {
+		version = d.LatestVersion
+	}
 
-func (d DiscordConfig) GetOAuthURL() string {
-	return fmt.Sprintf("%s?client_id=%s&redirect_uri=%s&response_type=code&scope=identify+email+guilds+guilds.join", DiscordOAuthURL, d.ClientID, d.GetRedirectURI())
+	return fmt.Sprintf("%s/%s", DiscordBaseURL, version)
 }
 
 func (d DiscordConfig) GetRedirectURI() string {

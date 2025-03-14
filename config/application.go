@@ -8,6 +8,7 @@ type AppConfig struct {
 	Port     string `env:"APP_PORT" envDefault:"8083"`
 	Timezone string `env:"APP_TIMEZONE" envDefault:"Asia/Jakarta"`
 	Debug    bool   `env:"APP_DEBUG" envDefault:"true"`
+	Gateway  string `env:"APP_GATEWAY_URL" envDefault:"http://localhost:3000"`
 }
 
 func (a AppConfig) GetAddress() string {
