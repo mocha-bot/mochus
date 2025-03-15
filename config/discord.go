@@ -8,10 +8,11 @@ const (
 )
 
 type DiscordConfig struct {
-	ClientID      string `env:"DISCORD_CLIENT_ID" envDefault:""`
-	ClientSecret  string `env:"DISCORD_CLIENT_SECRET" envDefault:""`
-	RedirectURI   string `env:"DISCORD_REDIRECT_URI" envDefault:""`
-	LatestVersion string `env:"DISCORD_LATEST_VERSION" envDefault:"v10"`
+	ClientID       string `env:"DISCORD_CLIENT_ID" envDefault:""`
+	ClientSecret   string `env:"DISCORD_CLIENT_SECRET" envDefault:""`
+	RedirectURI    string `env:"DISCORD_REDIRECT_URI" envDefault:""`
+	RedirectDomain string `env:"DISCORD_REDIRECT_DOMAIN" envDefault:".mocha-bot.xyz"`
+	LatestVersion  string `env:"DISCORD_LATEST_VERSION" envDefault:"v10"`
 }
 
 func (d DiscordConfig) GetBaseURL(version string) string {

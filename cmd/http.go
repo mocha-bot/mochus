@@ -47,7 +47,17 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 
 	// Start server
 	go func() {
-		if err := e.Start(cfg.App.GetAddress()); err != nil {
+		zLog.Info().Msgf("Starting server on %s", cfg.App.GetAddress())
+
+		var err error
+		if cfg.App.IsProduction() {
+			// handled by cloudflare
+			err = e.Start(cfg.App.GetAddress())
+		} else {
+			err = e.StartTLS(cfg.App.GetAddress(), "api-local.mocha-bot.xyz.pem", "api-local.mocha-bot.xyz-key.pem")
+		}
+
+		if err != nil {
 			zLog.Fatal().Err(err).Msg("error starting server")
 		}
 	}()

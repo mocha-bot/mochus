@@ -40,7 +40,14 @@ func (d *discordHandler) OauthCallback(c echo.Context) error {
 		return c.JSON(parseOauthCallbackError(err))
 	}
 
+	isLocalhost := d.cfg.App.IsLocalhost()
+
 	for _, cookie := range exchanged.ToHTTPCookies() {
+		cookie.Secure = !isLocalhost
+		cookie.Domain = d.cfg.Discord.RedirectDomain
+		cookie.Path = "/"
+		cookie.SameSite = http.SameSiteLaxMode
+
 		c.SetCookie(cookie)
 	}
 

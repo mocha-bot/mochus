@@ -23,8 +23,8 @@ func (at *AccessToken) ToHTTPCookies() Cookies {
 		return nil
 	}
 
-	// standardExpires := time.Now().Add(time.Duration(at.ExpiresIn) * time.Second)
-	refreshTokenExpires := time.Now().Add(time.Hour)
+	standardExpires := time.Now().Add(time.Duration(at.ExpiresIn) * time.Second)
+	refreshTokenExpires := standardExpires.Add(1 * time.Hour)
 
 	accessTokenCookie := &http.Cookie{
 		Name:   "access_token",
