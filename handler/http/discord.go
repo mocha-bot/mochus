@@ -62,16 +62,23 @@ func (d *discordHandler) RefreshToken(c echo.Context) error {
 		return c.JSON(parseRefreshTokenError(err))
 	}
 
-	accessToken, err := d.discordUsecase.ExchangeRefreshForToken(ctx, req.RefreshToken)
+	exchanged, err := d.discordUsecase.ExchangeRefreshForToken(ctx, req.RefreshToken)
 	if err != nil {
 		return c.JSON(parseRefreshTokenError(err))
 	}
 
-	for _, cookie := range accessToken.ToHTTPCookies() {
+	isLocalhost := d.cfg.App.IsLocalhost()
+
+	for _, cookie := range exchanged.ToHTTPCookies() {
+		cookie.Secure = !isLocalhost
+		cookie.Domain = d.cfg.Discord.RedirectDomain
+		cookie.Path = "/"
+		cookie.SameSite = http.SameSiteLaxMode
+
 		c.SetCookie(cookie)
 	}
 
-	return c.JSON(parseRefreshTokenResponse(accessToken))
+	return c.Redirect(http.StatusFound, d.cfg.App.Gateway)
 }
 
 func (d *discordHandler) RevokeToken(c echo.Context) error {
