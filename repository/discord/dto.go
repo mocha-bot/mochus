@@ -70,3 +70,7 @@ type UserResponse struct {
 	*User
 	*discord.HTTPResponse
 }
+
+type RevokeTokenResponse struct {
+	*discord.HTTPResponse
+}

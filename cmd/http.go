@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,21 +41,34 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 	discordUsecase := module.NewDiscordUsecase(discordRepository)
 	discordHandler := http_handler.NewDiscordHandler(cfg, discordUsecase)
 
-	e.GET("/auth/discord/callback", discordHandler.OauthCallback)
-	e.GET("/", func(c echo.Context) error {
-		return c.String(200, "Hello World")
+	apiV1 := e.Group("/api/v1")
+
+	authRoute := apiV1.Group("/auth/discord")
+	authRoute.GET("/callback", discordHandler.OauthCallback)
+	authRoute.POST("/refresh", discordHandler.RefreshToken)
+	authRoute.POST("/revoke", discordHandler.RevokeToken)
+	authRoute.GET("/user", discordHandler.GetUserByToken)
+
+	e.GET("/health", func(c echo.Context) error {
+		return c.String(http.StatusOK, "mochus is healthy")
 	})
 
 	// Start server
 	go func() {
-		zLog.Info().Msgf("Starting server on %s", cfg.App.GetAddress())
-
 		var err error
-		if cfg.App.IsProduction() {
-			// handled by cloudflare
+
+		switch {
+		case cfg.App.IsTLS():
+			if withCert := cfg.App.TLSCertFile != "" && cfg.App.TLSKeyFile != ""; withCert {
+				zLog.Info().Msgf("Starting server on %s with TLS", cfg.App.GetAddress())
+				err = e.StartTLS(cfg.App.GetAddress(), cfg.App.TLSCertFile, cfg.App.TLSKeyFile)
+			} else {
+				zLog.Info().Msgf("Starting server on %s with auto TLS", cfg.App.GetAddress())
+				err = e.StartAutoTLS(cfg.App.GetAddress())
+			}
+		default:
+			zLog.Info().Msgf("Starting server on %s", cfg.App.GetAddress())
 			err = e.Start(cfg.App.GetAddress())
-		} else {
-			err = e.StartTLS(cfg.App.GetAddress(), "api-local.mocha-bot.xyz.pem", "api-local.mocha-bot.xyz-key.pem")
 		}
 
 		if err != nil {

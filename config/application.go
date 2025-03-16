@@ -17,6 +17,11 @@ type AppConfig struct {
 	Debug       bool   `env:"APP_DEBUG" envDefault:"true"`
 	Gateway     string `env:"APP_GATEWAY_URL" envDefault:"http://127.0.0.1:3000"`
 	Environment string `env:"APP_ENV" envDefault:"development"`
+
+	// TLS
+	TLSCertFile string `env:"APP_CERT_FILE" envDefault:""`
+	TLSKeyFile  string `env:"APP_KEY_FILE" envDefault:""`
+	TLS         bool   `env:"APP_TLS" envDefault:"false"`
 }
 
 func (a AppConfig) GetAddress() string {
@@ -29,4 +34,8 @@ func (a AppConfig) IsProduction() bool {
 
 func (a AppConfig) IsLocalhost() bool {
 	return a.Host == "localhost" || a.Host == "127.0.0.1"
+}
+
+func (a AppConfig) IsTLS() bool {
+	return a.TLS
 }

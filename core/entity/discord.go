@@ -1,9 +1,16 @@
 package entity
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
 	"time"
+
+	"github.com/go-playground/validator/v10"
+	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
+)
+
+const (
+	OAuthRefreshTokenMaxAge = time.Hour
 )
 
 type OauthCallbackRequest struct {
@@ -23,29 +30,28 @@ func (at *AccessToken) ToHTTPCookies() Cookies {
 		return nil
 	}
 
-	standardExpires := time.Now().Add(time.Duration(at.ExpiresIn) * time.Second)
-	refreshTokenExpires := standardExpires.Add(1 * time.Hour)
+	refreshTokenMaxAge := at.ExpiresIn + int(OAuthRefreshTokenMaxAge.Seconds())
 
 	accessTokenCookie := &http.Cookie{
-		Name:   "access_token",
+		Name:   cookiey.CookieAccessToken,
 		Value:  at.AccessToken,
 		MaxAge: at.ExpiresIn,
 	}
 
 	refreshTokenCookie := &http.Cookie{
-		Name:   "refresh_token",
+		Name:   cookiey.CookieRefreshToken,
 		Value:  at.RefreshToken,
-		MaxAge: refreshTokenExpires.Second(),
+		MaxAge: refreshTokenMaxAge,
 	}
 
 	tokenTypeCookie := &http.Cookie{
-		Name:   "token_type",
+		Name:   cookiey.CookieTokenType,
 		Value:  at.TokenType,
 		MaxAge: at.ExpiresIn,
 	}
 
 	scopeCookie := &http.Cookie{
-		Name:   "scope",
+		Name:   cookiey.CookieScope,
 		Value:  at.Scope,
 		MaxAge: at.ExpiresIn,
 	}
@@ -54,26 +60,58 @@ func (at *AccessToken) ToHTTPCookies() Cookies {
 }
 
 type RefreshTokenRequest struct {
-	RefreshToken string `header:"refresh_token"`
+	RefreshToken string `validate:"required"`
+	Referer      string `header:"Referer" validate:"required"`
 }
 
+func (rt *RefreshTokenRequest) Validate() error {
+	err := validator.New().Struct(rt)
+	if err != nil {
+		for _, e := range err.(validator.ValidationErrors) {
+			return fmt.Errorf("field %s is invalid", e.Field())
+		}
+	}
+
+	return nil
+}
+
+const (
+	GrantTypeRefreshToken = "refresh_token"
+	GrantTypeAccessToken  = "access_token"
+)
+
 type RevokeTokenRequest struct {
-	Token string `header:"token"`
+	AccessToken  string // cookie
+	RefreshToken string // cookie
+	Referer      string `header:"Referer" validate:"required"`
+}
+
+func (rt *RevokeTokenRequest) Validate() error {
+	err := validator.New().Struct(rt)
+	if err != nil {
+		for _, e := range err.(validator.ValidationErrors) {
+			return fmt.Errorf("field %s is invalid", e.Field())
+		}
+	}
+
+	return nil
+}
+
+func (rt *RevokeTokenRequest) ToPayload() map[string]string {
+	payload := make(map[string]string)
+
+	switch {
+	case rt.RefreshToken != "":
+		payload["token"] = rt.RefreshToken
+		payload["token_type_hint"] = GrantTypeRefreshToken
+	case rt.AccessToken != "":
+		payload["token"] = rt.AccessToken
+		payload["token_type_hint"] = GrantTypeAccessToken
+	}
+
+	return payload
 }
 
 type GetUserByTokenRequest struct {
 	Authorization string `header:"Authorization"`
-}
-
-func (r *GetUserByTokenRequest) Token() string {
-	strs := strings.Split(r.Authorization, " ")
-	if len(strs) != 2 {
-		return ""
-	}
-
-	if strs[0] != "Bearer" {
-		return ""
-	}
-
-	return strs[1]
 }

@@ -7,6 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mocha-bot/mochus/core/entity"
+	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
+	zLog "github.com/rs/zerolog/log"
 )
 
 func parseOauthCallbackRequest(c echo.Context) (*entity.OauthCallbackRequest, error) {
@@ -24,6 +26,7 @@ func parseOauthCallbackError(err error) (code int, i any) {
 	case errors.Is(err, entity.ErrorBind):
 		return http.StatusBadRequest, Response{Message: err.Error()}
 	default:
+		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
 	}
 }
@@ -31,7 +34,15 @@ func parseOauthCallbackError(err error) (code int, i any) {
 func parseRefreshTokenRequest(c echo.Context) (*entity.RefreshTokenRequest, error) {
 	req := new(entity.RefreshTokenRequest)
 
-	if err := c.Bind(req); err != nil {
+	refreshTokenCookie, err := c.Cookie(cookiey.CookieRefreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
+	}
+
+	req.RefreshToken = refreshTokenCookie.Value
+
+	binder := &echo.DefaultBinder{}
+	if err := binder.BindHeaders(c, req); err != nil {
 		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
 	}
 
@@ -43,18 +54,23 @@ func parseRefreshTokenError(err error) (code int, i any) {
 	case errors.Is(err, entity.ErrorUnauthorized):
 		return http.StatusUnauthorized, Response{Message: err.Error()}
 	default:
+		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
 	}
-}
-
-func parseRefreshTokenResponse(accessToken *entity.AccessToken) (code int, i any) {
-	return http.StatusOK, Response{Data: accessToken, Message: "Success refresh token"}
 }
 
 func parseRevokeTokenRequest(c echo.Context) (*entity.RevokeTokenRequest, error) {
 	req := new(entity.RevokeTokenRequest)
 
-	if err := c.Bind(req); err != nil {
+	// error isn't checked because if cookie doesn't exist, it's still allowed
+	refreshTokenCookie, _ := c.Cookie(cookiey.CookieRefreshToken)
+	accessTokenCookie, _ := c.Cookie(cookiey.CookieAccessToken)
+
+	req.RefreshToken = refreshTokenCookie.Value
+	req.AccessToken = accessTokenCookie.Value
+
+	binder := &echo.DefaultBinder{}
+	if err := binder.BindHeaders(c, req); err != nil {
 		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
 	}
 
@@ -66,18 +82,16 @@ func parseRevokeTokenError(err error) (code int, i any) {
 	case errors.Is(err, entity.ErrorUnauthorized):
 		return http.StatusUnauthorized, Response{Message: err.Error()}
 	default:
+		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
 	}
-}
-
-func parseRevokeTokenResponse() (code int, i any) {
-	return http.StatusOK, Response{Message: "Success revoke token"}
 }
 
 func parseGetUserByTokenRequest(c echo.Context) (*entity.GetUserByTokenRequest, error) {
 	req := new(entity.GetUserByTokenRequest)
 
-	if err := c.Bind(req); err != nil {
+	binder := &echo.DefaultBinder{}
+	if err := binder.BindHeaders(c, req); err != nil {
 		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
 	}
 
@@ -89,6 +103,7 @@ func parseGetUserByTokenError(err error) (code int, i any) {
 	case errors.Is(err, entity.ErrorUnauthorized):
 		return http.StatusUnauthorized, Response{Message: err.Error()}
 	default:
+		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
 	}
 }

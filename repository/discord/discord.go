@@ -50,7 +50,7 @@ func (d *discordRepository) GetToken(ctx context.Context, code string) (*entity.
 	}
 
 	if resp.IsErrorState() {
-		return nil, fmt.Errorf("Error %v: %v", response.HTTPResponse.Error, response.ErrorDescription)
+		return nil, fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.ErrorDescription)
 	}
 
 	return response.AccessToken.ToEntity(), nil
@@ -83,27 +83,25 @@ func (d *discordRepository) GetTokenByRefresh(ctx context.Context, refreshToken 
 	}
 
 	if resp.IsErrorState() {
-		return nil, fmt.Errorf("Error %v: %v", response.HTTPResponse.Error, response.HTTPResponse.ErrorDescription)
+		return nil, fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.ErrorDescription)
 	}
 
 	return response.AccessToken.ToEntity(), nil
 }
 
-func (d *discordRepository) RevokeToken(ctx context.Context, token string) error {
+func (d *discordRepository) RevokeToken(ctx context.Context, request *entity.RevokeTokenRequest) error {
+	var response RevokeTokenResponse
+
 	headers := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded",
-	}
-
-	payload := map[string]string{
-		"token":           token,
-		"token_type_hint": GrantTypeAccessToken,
 	}
 
 	req := d.client.R().
 		SetHeaders(headers).
 		SetBasicAuth(d.cfg.ClientID, d.cfg.ClientSecret).
 		SetContext(ctx).
-		SetFormData(payload)
+		SetFormData(request.ToPayload()).
+		SetErrorResult(&response)
 
 	resp, err := req.Post("/oauth2/token/revoke")
 	if err != nil {
@@ -111,7 +109,7 @@ func (d *discordRepository) RevokeToken(ctx context.Context, token string) error
 	}
 
 	if resp.IsErrorState() {
-		return fmt.Errorf("Error with status code: %v", resp.StatusCode)
+		return fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.HTTPResponse.ErrorDescription)
 	}
 
 	return nil
@@ -121,9 +119,10 @@ func (d *discordRepository) GetUser(ctx context.Context, token string) (*entity.
 	var response UserResponse
 
 	req := d.client.R().
-		SetHeader("Authorization", fmt.Sprintf("Bearer %s", token)).
+		SetHeader("Authorization", token).
 		SetContext(ctx).
-		SetSuccessResult(&response)
+		SetSuccessResult(&response).
+		SetErrorResult(&response)
 
 	resp, err := req.Get("/users/@me")
 	if err != nil {
@@ -131,7 +130,7 @@ func (d *discordRepository) GetUser(ctx context.Context, token string) (*entity.
 	}
 
 	if resp.IsErrorState() {
-		return nil, fmt.Errorf("Error %v: %v", response.HTTPResponse.Error, response.ErrorDescription)
+		return nil, fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.ErrorDescription)
 	}
 
 	return response.User.ToEntity(), nil

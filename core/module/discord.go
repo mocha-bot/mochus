@@ -10,8 +10,8 @@ import (
 
 type DiscordUsecase interface {
 	ExchangeCodeForToken(ctx context.Context, code string) (*entity.AccessToken, error)
-	ExchangeRefreshForToken(ctx context.Context, refreshToken string) (*entity.AccessToken, error)
-	RevokeToken(ctx context.Context, token string) error
+	ExchangeRefreshForToken(ctx context.Context, req *entity.RefreshTokenRequest) (*entity.AccessToken, error)
+	RevokeToken(ctx context.Context, req *entity.RevokeTokenRequest) error
 
 	GetUser(ctx context.Context, token string) (*entity.User, error)
 }
@@ -39,17 +39,25 @@ func (d *discordUsecase) ExchangeCodeForToken(ctx context.Context, code string) 
 	return accessToken, nil
 }
 
-func (d *discordUsecase) ExchangeRefreshForToken(ctx context.Context, refreshToken string) (*entity.AccessToken, error) {
-	if refreshToken == "" {
-		return nil, fmt.Errorf("%w, invalid refresh token", entity.ErrorUnauthorized)
+func (d *discordUsecase) ExchangeRefreshForToken(ctx context.Context, req *entity.RefreshTokenRequest) (*entity.AccessToken, error) {
+	if err := req.Validate(); err != nil {
+		return nil, fmt.Errorf("%w, %w", entity.ErrorUnauthorized, err)
 	}
 
-	accessToken, err := d.DiscordRepository.GetTokenByRefresh(ctx, refreshToken)
+	accessToken, err := d.DiscordRepository.GetTokenByRefresh(ctx, req.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
 
 	return accessToken, nil
+}
+
+func (d *discordUsecase) RevokeToken(ctx context.Context, req *entity.RevokeTokenRequest) error {
+	if err := req.Validate(); err != nil {
+		return fmt.Errorf("%w, %w", entity.ErrorUnauthorized, err)
+	}
+
+	return d.DiscordRepository.RevokeToken(ctx, req)
 }
 
 func (d *discordUsecase) GetUser(ctx context.Context, token string) (*entity.User, error) {
@@ -63,12 +71,4 @@ func (d *discordUsecase) GetUser(ctx context.Context, token string) (*entity.Use
 	}
 
 	return user, nil
-}
-
-func (d *discordUsecase) RevokeToken(ctx context.Context, token string) error {
-	if token == "" {
-		return fmt.Errorf("%w, invalid token", entity.ErrorUnauthorized)
-	}
-
-	return d.DiscordRepository.RevokeToken(ctx, token)
 }

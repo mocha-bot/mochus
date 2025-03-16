@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mocha-bot/mochus/config"
 	"github.com/mocha-bot/mochus/core/module"
+	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
 )
 
 type discordHandler struct {
@@ -62,7 +63,7 @@ func (d *discordHandler) RefreshToken(c echo.Context) error {
 		return c.JSON(parseRefreshTokenError(err))
 	}
 
-	exchanged, err := d.discordUsecase.ExchangeRefreshForToken(ctx, req.RefreshToken)
+	exchanged, err := d.discordUsecase.ExchangeRefreshForToken(ctx, req)
 	if err != nil {
 		return c.JSON(parseRefreshTokenError(err))
 	}
@@ -78,7 +79,7 @@ func (d *discordHandler) RefreshToken(c echo.Context) error {
 		c.SetCookie(cookie)
 	}
 
-	return c.Redirect(http.StatusFound, d.cfg.App.Gateway)
+	return c.Redirect(http.StatusFound, req.Referer)
 }
 
 func (d *discordHandler) RevokeToken(c echo.Context) error {
@@ -89,12 +90,24 @@ func (d *discordHandler) RevokeToken(c echo.Context) error {
 		return c.JSON(parseRevokeTokenError(err))
 	}
 
-	err = d.discordUsecase.RevokeToken(ctx, req.Token)
+	err = d.discordUsecase.RevokeToken(ctx, req)
 	if err != nil {
 		return c.JSON(parseRevokeTokenError(err))
 	}
 
-	return c.JSON(http.StatusOK, Response{Message: "Success revoke token"})
+	// remove cookies
+	keys := []string{
+		cookiey.CookieAccessToken,
+		cookiey.CookieRefreshToken,
+		cookiey.CookieTokenType,
+		cookiey.CookieScope,
+	}
+
+	for _, key := range keys {
+		c.SetCookie(&http.Cookie{Name: key, MaxAge: -1})
+	}
+
+	return c.Redirect(http.StatusFound, req.Referer)
 }
 
 func (d *discordHandler) GetUserByToken(c echo.Context) error {
@@ -105,7 +118,7 @@ func (d *discordHandler) GetUserByToken(c echo.Context) error {
 		return c.JSON(parseGetUserByTokenError(err))
 	}
 
-	user, err := d.discordUsecase.GetUser(ctx, req.Token())
+	user, err := d.discordUsecase.GetUser(ctx, req.Authorization)
 	if err != nil {
 		return c.JSON(parseGetUserByTokenError(err))
 	}
