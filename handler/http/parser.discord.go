@@ -66,8 +66,13 @@ func parseRevokeTokenRequest(c echo.Context) (*entity.RevokeTokenRequest, error)
 	refreshTokenCookie, _ := c.Cookie(cookiey.CookieRefreshToken)
 	accessTokenCookie, _ := c.Cookie(cookiey.CookieAccessToken)
 
-	req.RefreshToken = refreshTokenCookie.Value
-	req.AccessToken = accessTokenCookie.Value
+	if refreshTokenCookie != nil {
+		req.RefreshToken = refreshTokenCookie.Value
+	}
+
+	if accessTokenCookie != nil {
+		req.AccessToken = accessTokenCookie.Value
+	}
 
 	binder := &echo.DefaultBinder{}
 	if err := binder.BindHeaders(c, req); err != nil {
