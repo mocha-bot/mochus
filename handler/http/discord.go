@@ -80,7 +80,7 @@ func (d *discordHandler) RefreshToken(c echo.Context) error {
 		c.SetCookie(cookie)
 	}
 
-	return c.Redirect(http.StatusFound, req.Referer)
+	return c.Redirect(http.StatusTemporaryRedirect, req.Referer)
 }
 
 func (d *discordHandler) RevokeToken(c echo.Context) error {
@@ -108,7 +108,7 @@ func (d *discordHandler) RevokeToken(c echo.Context) error {
 		c.SetCookie(&http.Cookie{Name: key, MaxAge: -1})
 	}
 
-	return c.Redirect(http.StatusFound, req.Referer)
+	return c.Redirect(http.StatusTemporaryRedirect, req.Referer)
 }
 
 func (d *discordHandler) GetUserByToken(c echo.Context) error {
