@@ -21,7 +21,7 @@ func WithAllowOrigins(origins []string) CORSOption {
 
 func WithAllowMethods(methods []string) CORSOption {
 	return func(o *CORSOptions) {
-		o.AllowOrigins = methods
+		o.AllowMethods = methods
 	}
 }
 
