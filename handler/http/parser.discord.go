@@ -41,11 +41,6 @@ func parseRefreshTokenRequest(c echo.Context) (*entity.RefreshTokenRequest, erro
 
 	req.RefreshToken = refreshTokenCookie.Value
 
-	binder := &echo.DefaultBinder{}
-	if err := binder.BindHeaders(c, req); err != nil {
-		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
-	}
-
 	return req, nil
 }
 
@@ -72,11 +67,6 @@ func parseRevokeTokenRequest(c echo.Context) (*entity.RevokeTokenRequest, error)
 
 	if accessTokenCookie != nil {
 		req.AccessToken = accessTokenCookie.Value
-	}
-
-	binder := &echo.DefaultBinder{}
-	if err := binder.BindHeaders(c, req); err != nil {
-		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
 	}
 
 	return req, nil

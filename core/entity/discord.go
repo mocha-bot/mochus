@@ -61,7 +61,6 @@ func (at *AccessToken) ToHTTPCookies() Cookies {
 
 type RefreshTokenRequest struct {
 	RefreshToken string `validate:"required"`
-	Referer      string `header:"Referer" validate:"required"`
 }
 
 func (rt *RefreshTokenRequest) Validate() error {
@@ -83,7 +82,6 @@ const (
 type RevokeTokenRequest struct {
 	AccessToken  string // cookie
 	RefreshToken string // cookie
-	Referer      string `header:"Referer" validate:"required"`
 }
 
 func (rt *RevokeTokenRequest) Validate() error {
