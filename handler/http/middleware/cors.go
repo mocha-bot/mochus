@@ -1,16 +1,51 @@
 package http_middleware
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func CORS() echo.MiddlewareFunc {
+type CORSOptions struct {
+	AllowOrigins     []string
+	AllowMethods     []string
+	AllowCredentials bool
+}
+
+type CORSOption func(*CORSOptions)
+
+func WithAllowOrigins(origins []string) CORSOption {
+	return func(o *CORSOptions) {
+		o.AllowOrigins = origins
+	}
+}
+
+func WithAllowMethods(methods []string) CORSOption {
+	return func(o *CORSOptions) {
+		o.AllowOrigins = methods
+	}
+}
+
+func WithAllowCredentials(allow bool) CORSOption {
+	return func(o *CORSOptions) {
+		o.AllowCredentials = allow
+	}
+}
+
+func CORS(opts ...CORSOption) echo.MiddlewareFunc {
+	options := &CORSOptions{
+		AllowOrigins:     []string{},
+		AllowMethods:     []string{},
+		AllowCredentials: false,
+	}
+
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	return middleware.CORSWithConfig(middleware.CORSConfig{
-		Skipper:      middleware.DefaultSkipper,
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
+		Skipper:          middleware.DefaultSkipper,
+		AllowOrigins:     options.AllowOrigins,
+		AllowMethods:     options.AllowMethods,
+		AllowCredentials: options.AllowCredentials,
 	})
 }

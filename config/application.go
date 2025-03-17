@@ -22,6 +22,11 @@ type AppConfig struct {
 	TLSCertFile string `env:"APP_CERT_FILE" envDefault:""`
 	TLSKeyFile  string `env:"APP_KEY_FILE" envDefault:""`
 	TLS         bool   `env:"APP_TLS" envDefault:"false"`
+
+	// CORS
+	CORSAllowOrigins     []string `env:"APP_CORS_ALLOW_ORIGINS" envSeparator:"," envDefault:"*.mocha-bot.xyz,mocha-bot.xyz"`
+	CORSAllowMethods     []string `env:"APP_CORS_ALLOW_METHODS" envSeparator:"," envDefault:"GET,POST,PUT,DELETE,OPTIONS"`
+	CORSAllowCredentials bool     `env:"APP_CORS_ALLOW_CREDENTIALS" envDefault:"true"`
 }
 
 func (a AppConfig) GetAddress() string {

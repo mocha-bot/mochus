@@ -37,7 +37,14 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 
 	e := echo.New()
 	e.Logger.SetLevel(log.LstdFlags)
-	e.Use(http_middleware.CORS(), middleware.RequestID())
+
+	CORS := http_middleware.CORS(
+		http_middleware.WithAllowOrigins(cfg.App.CORSAllowOrigins),
+		http_middleware.WithAllowMethods(cfg.App.CORSAllowMethods),
+		http_middleware.WithAllowCredentials(cfg.App.CORSAllowCredentials),
+	)
+
+	e.Use(CORS, middleware.RequestID())
 
 	discordRepository := discord_repository.NewDiscordRepository(cfg.Discord)
 	discordUsecase := module.NewDiscordUsecase(discordRepository)
