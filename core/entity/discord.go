@@ -56,7 +56,13 @@ func (at *AccessToken) ToHTTPCookies() Cookies {
 		MaxAge: at.ExpiresIn,
 	}
 
-	return []*http.Cookie{accessTokenCookie, refreshTokenCookie, tokenTypeCookie, scopeCookie}
+	isLoggedInCookie := &http.Cookie{
+		Name:   cookiey.CookieIsLoggedIn,
+		Value:  "true",
+		MaxAge: at.ExpiresIn,
+	}
+
+	return []*http.Cookie{accessTokenCookie, refreshTokenCookie, tokenTypeCookie, scopeCookie, isLoggedInCookie}
 }
 
 type RefreshTokenRequest struct {
