@@ -90,10 +90,19 @@ func parseRevokeTokenError(err error) (code int, i any) {
 func parseGetUserByTokenRequest(c echo.Context) (*entity.GetUserByTokenRequest, error) {
 	req := new(entity.GetUserByTokenRequest)
 
-	binder := &echo.DefaultBinder{}
-	if err := binder.BindHeaders(c, req); err != nil {
+	accessTokenCookie, err := c.Cookie(cookiey.CookieAccessToken)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
 	}
+
+	req.AccessToken = accessTokenCookie.Value
+
+	tokenTypeCookie, err := c.Cookie(cookiey.CookieTokenType)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", entity.ErrorUnauthorized, err)
+	}
+
+	req.TokenType = tokenTypeCookie.Value
 
 	return req, nil
 }

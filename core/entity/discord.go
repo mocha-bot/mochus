@@ -113,5 +113,10 @@ func (rt *RevokeTokenRequest) ToPayload() map[string]string {
 }
 
 type GetUserByTokenRequest struct {
-	Authorization string `header:"Authorization"`
+	AccessToken string // cookie
+	TokenType   string // cookie
+}
+
+func (gubt *GetUserByTokenRequest) ConstructAuthorization() string {
+	return fmt.Sprintf("%s %s", gubt.TokenType, gubt.AccessToken)
 }

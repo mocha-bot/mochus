@@ -119,7 +119,7 @@ func (d *discordHandler) GetUserByToken(c echo.Context) error {
 		return c.JSON(parseGetUserByTokenError(err))
 	}
 
-	user, err := d.discordUsecase.GetUser(ctx, req.Authorization)
+	user, err := d.discordUsecase.GetUser(ctx, req.ConstructAuthorization())
 	if err != nil {
 		return c.JSON(parseGetUserByTokenError(err))
 	}
