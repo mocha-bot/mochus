@@ -47,7 +47,6 @@ func (d *discordHandler) OauthCallback(c echo.Context) error {
 		cookie.Secure = !isLocalhost
 		cookie.Domain = d.cfg.Discord.RedirectDomain
 		cookie.Path = "/"
-		cookie.HttpOnly = true
 		cookie.SameSite = http.SameSiteLaxMode
 
 		c.SetCookie(cookie)
@@ -75,7 +74,6 @@ func (d *discordHandler) RefreshToken(c echo.Context) error {
 		cookie.Secure = !isLocalhost
 		cookie.Domain = d.cfg.Discord.RedirectDomain
 		cookie.Path = "/"
-		cookie.HttpOnly = true
 		cookie.SameSite = http.SameSiteLaxMode
 
 		c.SetCookie(cookie)

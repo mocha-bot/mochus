@@ -33,27 +33,31 @@ func (at *AccessToken) ToHTTPCookies() Cookies {
 	refreshTokenMaxAge := at.ExpiresIn + int(OAuthRefreshTokenMaxAge.Seconds())
 
 	accessTokenCookie := &http.Cookie{
-		Name:   cookiey.CookieAccessToken,
-		Value:  at.AccessToken,
-		MaxAge: at.ExpiresIn,
+		Name:     cookiey.CookieAccessToken,
+		Value:    at.AccessToken,
+		MaxAge:   at.ExpiresIn,
+		HttpOnly: true,
 	}
 
 	refreshTokenCookie := &http.Cookie{
-		Name:   cookiey.CookieRefreshToken,
-		Value:  at.RefreshToken,
-		MaxAge: refreshTokenMaxAge,
+		Name:     cookiey.CookieRefreshToken,
+		Value:    at.RefreshToken,
+		MaxAge:   refreshTokenMaxAge,
+		HttpOnly: true,
 	}
 
 	tokenTypeCookie := &http.Cookie{
-		Name:   cookiey.CookieTokenType,
-		Value:  at.TokenType,
-		MaxAge: at.ExpiresIn,
+		Name:     cookiey.CookieTokenType,
+		Value:    at.TokenType,
+		MaxAge:   at.ExpiresIn,
+		HttpOnly: true,
 	}
 
 	scopeCookie := &http.Cookie{
-		Name:   cookiey.CookieScope,
-		Value:  at.Scope,
-		MaxAge: at.ExpiresIn,
+		Name:     cookiey.CookieScope,
+		Value:    at.Scope,
+		MaxAge:   at.ExpiresIn,
+		HttpOnly: true,
 	}
 
 	isLoggedInCookie := &http.Cookie{
