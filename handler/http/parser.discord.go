@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
 	"github.com/mocha-bot/mochus/core/entity"
 	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
+	"github.com/mocha-bot/mochus/pkg/echoy"
 	zLog "github.com/rs/zerolog/log"
 )
 
@@ -18,6 +20,28 @@ func parseOauthCallbackRequest(c echo.Context) (*entity.OauthCallbackRequest, er
 		return nil, fmt.Errorf("%w: %s", entity.ErrorBind, err)
 	}
 
+	parsedURL, err := url.ParseRequestURI(c.Request().RequestURI)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", entity.ErrorBind, err)
+	}
+
+	redirectURL := parsedURL.Query().Get(RedirectURLKey)
+	if redirectURL == "" {
+		return nil, fmt.Errorf("%w: %s", entity.ErrorBind, "redirect_url is required")
+	}
+
+	finalURL := url.URL{
+		Scheme:   echoy.GetScheme(c),
+		Host:     c.Request().Host,
+		Path:     c.Request().URL.Path,
+		RawQuery: url.Values{RedirectURLKey: {redirectURL}}.Encode(),
+	}
+
+	req.RequestURL, err = url.QueryUnescape(finalURL.String())
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", entity.ErrorBind, err)
+	}
+
 	return req, nil
 }
 
@@ -25,10 +49,25 @@ func parseOauthCallbackError(err error) (code int, i any) {
 	switch {
 	case errors.Is(err, entity.ErrorBind):
 		return http.StatusBadRequest, Response{Message: err.Error()}
+	case errors.Is(err, entity.ErrorUnauthorized):
+		return http.StatusUnauthorized, Response{Message: err.Error()}
+	case errors.Is(err, entity.ErrorBadRequest):
+		return http.StatusBadRequest, Response{Message: err.Error()}
 	default:
 		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
 	}
+}
+
+func parseOauthCallbackRedirectError(redirectURL string, code int, i any) (newRedirectURL string) {
+	redirectURLParsed, _ := url.Parse(redirectURL)
+
+	if i == nil {
+		return redirectURLParsed.String()
+	}
+
+	redirectURLParsed.RawQuery = url.Values{"error": {i.(Response).Message}}.Encode()
+	return redirectURLParsed.String()
 }
 
 func parseRefreshTokenRequest(c echo.Context) (*entity.RefreshTokenRequest, error) {
@@ -48,6 +87,8 @@ func parseRefreshTokenError(err error) (code int, i any) {
 	switch {
 	case errors.Is(err, entity.ErrorUnauthorized):
 		return http.StatusUnauthorized, Response{Message: err.Error()}
+	case errors.Is(err, entity.ErrorBadRequest):
+		return http.StatusBadRequest, Response{Message: err.Error()}
 	default:
 		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
@@ -76,6 +117,8 @@ func parseRevokeTokenError(err error) (code int, i any) {
 	switch {
 	case errors.Is(err, entity.ErrorUnauthorized):
 		return http.StatusUnauthorized, Response{Message: err.Error()}
+	case errors.Is(err, entity.ErrorBadRequest):
+		return http.StatusBadRequest, Response{Message: err.Error()}
 	default:
 		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}
@@ -106,6 +149,8 @@ func parseGetUserByTokenError(err error) (code int, i any) {
 	switch {
 	case errors.Is(err, entity.ErrorUnauthorized):
 		return http.StatusUnauthorized, Response{Message: err.Error()}
+	case errors.Is(err, entity.ErrorBadRequest):
+		return http.StatusBadRequest, Response{Message: err.Error()}
 	default:
 		zLog.Error().Err(err).Msg("Internal server error")
 		return http.StatusInternalServerError, Response{Message: "Internal server error"}

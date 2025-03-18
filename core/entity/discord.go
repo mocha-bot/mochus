@@ -14,7 +14,20 @@ const (
 )
 
 type OauthCallbackRequest struct {
-	Code string `query:"code"`
+	Code        string `query:"code"`
+	RequestURL  string `query:"request_url"`
+	RedirectURL string `query:"redirect_url"`
+}
+
+func (ocr *OauthCallbackRequest) Validate() error {
+	err := validator.New().Struct(ocr)
+	if err != nil {
+		for _, e := range err.(validator.ValidationErrors) {
+			return fmt.Errorf("field %s is invalid", e.Field())
+		}
+	}
+
+	return nil
 }
 
 type AccessToken struct {

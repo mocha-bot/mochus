@@ -2,6 +2,7 @@ package discord_repository
 
 import (
 	"context"
+	"net/http"
 
 	"fmt"
 
@@ -23,7 +24,7 @@ func NewDiscordRepository(cfg config.DiscordConfig) repository.DiscordRepository
 	}
 }
 
-func (d *discordRepository) GetToken(ctx context.Context, code string) (*entity.AccessToken, error) {
+func (d *discordRepository) GetToken(ctx context.Context, code, redirectURL string) (*entity.AccessToken, error) {
 	var response AccessTokenResponse
 
 	headers := map[string]string{
@@ -33,7 +34,7 @@ func (d *discordRepository) GetToken(ctx context.Context, code string) (*entity.
 	payload := map[string]string{
 		"grant_type":   GrantTypeAuthorizationCode,
 		"code":         code,
-		"redirect_uri": d.cfg.GetRedirectURI(),
+		"redirect_uri": redirectURL,
 	}
 
 	req := d.client.R().
@@ -44,12 +45,20 @@ func (d *discordRepository) GetToken(ctx context.Context, code string) (*entity.
 		SetErrorResult(&response).
 		SetFormData(payload)
 
-	resp, err := req.Post("/oauth2/token")
+	resp, err := req.Post(Oauth2GetToken)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.IsErrorState() {
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, entity.ErrorUnauthorized
+		}
+
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
+		}
+
 		return nil, fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.ErrorDescription)
 	}
 
@@ -66,7 +75,6 @@ func (d *discordRepository) GetTokenByRefresh(ctx context.Context, refreshToken 
 	payload := map[string]string{
 		"grant_type":    GrantTypeRefreshToken,
 		"refresh_token": refreshToken,
-		"redirect_uri":  d.cfg.GetRedirectURI(),
 	}
 
 	req := d.client.R().
@@ -77,12 +85,20 @@ func (d *discordRepository) GetTokenByRefresh(ctx context.Context, refreshToken 
 		SetErrorResult(&response).
 		SetFormData(payload)
 
-	resp, err := req.Post("/oauth2/token")
+	resp, err := req.Post(Oauth2GetToken)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.IsErrorState() {
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, entity.ErrorUnauthorized
+		}
+
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
+		}
+
 		return nil, fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.ErrorDescription)
 	}
 
@@ -103,12 +119,20 @@ func (d *discordRepository) RevokeToken(ctx context.Context, request *entity.Rev
 		SetFormData(request.ToPayload()).
 		SetErrorResult(&response)
 
-	resp, err := req.Post("/oauth2/token/revoke")
+	resp, err := req.Post(Oauth2RevokeToken)
 	if err != nil {
 		return err
 	}
 
 	if resp.IsErrorState() {
+		if resp.StatusCode == http.StatusUnauthorized {
+			return entity.ErrorUnauthorized
+		}
+
+		if resp.StatusCode == http.StatusBadRequest {
+			return fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
+		}
+
 		return fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.HTTPResponse.ErrorDescription)
 	}
 
@@ -124,12 +148,20 @@ func (d *discordRepository) GetUser(ctx context.Context, token string) (*entity.
 		SetSuccessResult(&response).
 		SetErrorResult(&response)
 
-	resp, err := req.Get("/users/@me")
+	resp, err := req.Get(GetUser)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.IsErrorState() {
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, entity.ErrorUnauthorized
+		}
+
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
+		}
+
 		return nil, fmt.Errorf("Error %v %v: %v", response.HTTPResponse.Message, response.HTTPResponse.Error, response.ErrorDescription)
 	}
 

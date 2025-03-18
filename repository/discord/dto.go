@@ -7,6 +7,7 @@ import (
 
 const (
 	GrantTypeAuthorizationCode = "authorization_code"
+	GrantTypeClientCredentials = "client_credentials"
 	GrantTypeRefreshToken      = "refresh_token"
 	GrantTypeAccessToken       = "access_token"
 )
@@ -47,9 +48,18 @@ type AccessTokenResponse struct {
 type User struct {
 	ID            string `json:"id"`
 	Username      string `json:"username"`
-	Discriminator string `json:"discriminator"`
 	Avatar        string `json:"avatar"`
+	Discriminator string `json:"discriminator"`
+	PublicFlags   int    `json:"public_flags"`
+	Flags         int    `json:"flags"`
+	Banner        string `json:"banner"`
+	AccentColor   string `json:"accent_color,omitempty"`
+	GlobalName    string `json:"global_name"`
+	MFAEnabled    bool   `json:"mfa_enabled"`
+	Locale        string `json:"locale"`
+	PremiumType   int    `json:"premium_type"`
 	Email         string `json:"email"`
+	Verified      bool   `json:"verified"`
 }
 
 func (u *User) ToEntity() *entity.User {
@@ -62,7 +72,16 @@ func (u *User) ToEntity() *entity.User {
 		Username:      u.Username,
 		Discriminator: u.Discriminator,
 		Avatar:        u.Avatar,
+		PublicFlags:   u.PublicFlags,
+		Flags:         u.Flags,
+		Banner:        u.Banner,
+		AccentColor:   u.AccentColor,
+		GlobalName:    u.GlobalName,
+		MFAEnabled:    u.MFAEnabled,
+		Locale:        u.Locale,
+		PremiumType:   u.PremiumType,
 		Email:         u.Email,
+		Verified:      u.Verified,
 	}
 }
 

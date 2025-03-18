@@ -31,14 +31,20 @@ func NewDiscordHandler(cfg config.Config, discordUsecase module.DiscordUsecase) 
 func (d *discordHandler) OauthCallback(c echo.Context) error {
 	ctx := c.Request().Context()
 
+	// If the error occurs, the discord will still got redirected to the desired URL
+	// with the error message in the query params and the URI fragment will also be appended
+	// e.g. /redirect?error=error_message#access_token=token&token_type=type&expires_in=3600&refresh_token=refresh&scope=identify
+
 	req, err := parseOauthCallbackRequest(c)
 	if err != nil {
-		return c.JSON(parseOauthCallbackError(err))
+		code, resp := parseOauthCallbackError(err)
+		return c.Redirect(http.StatusTemporaryRedirect, parseOauthCallbackRedirectError(req.RedirectURL, code, resp))
 	}
 
-	exchanged, err := d.discordUsecase.ExchangeCodeForToken(ctx, req.Code)
+	exchanged, err := d.discordUsecase.ExchangeCodeForToken(ctx, req)
 	if err != nil {
-		return c.JSON(parseOauthCallbackError(err))
+		code, resp := parseOauthCallbackError(err)
+		return c.Redirect(http.StatusTemporaryRedirect, parseOauthCallbackRedirectError(req.RedirectURL, code, resp))
 	}
 
 	isLocalhost := d.cfg.App.IsLocalhost()
@@ -52,7 +58,7 @@ func (d *discordHandler) OauthCallback(c echo.Context) error {
 		c.SetCookie(cookie)
 	}
 
-	return c.Redirect(http.StatusFound, d.cfg.App.Gateway)
+	return c.Redirect(http.StatusFound, req.RedirectURL)
 }
 
 func (d *discordHandler) RefreshToken(c echo.Context) error {

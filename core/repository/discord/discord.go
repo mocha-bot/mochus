@@ -7,7 +7,7 @@ import (
 )
 
 type DiscordRepository interface {
-	GetToken(ctx context.Context, code string) (*entity.AccessToken, error)
+	GetToken(ctx context.Context, code, redirectURL string) (*entity.AccessToken, error)
 	GetTokenByRefresh(ctx context.Context, refreshToken string) (*entity.AccessToken, error)
 	RevokeToken(ctx context.Context, req *entity.RevokeTokenRequest) error
 

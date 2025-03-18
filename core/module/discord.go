@@ -9,7 +9,7 @@ import (
 )
 
 type DiscordUsecase interface {
-	ExchangeCodeForToken(ctx context.Context, code string) (*entity.AccessToken, error)
+	ExchangeCodeForToken(ctx context.Context, req *entity.OauthCallbackRequest) (*entity.AccessToken, error)
 	ExchangeRefreshForToken(ctx context.Context, req *entity.RefreshTokenRequest) (*entity.AccessToken, error)
 	RevokeToken(ctx context.Context, req *entity.RevokeTokenRequest) error
 
@@ -26,17 +26,12 @@ func NewDiscordUsecase(repo repository.DiscordRepository) DiscordUsecase {
 	}
 }
 
-func (d *discordUsecase) ExchangeCodeForToken(ctx context.Context, code string) (*entity.AccessToken, error) {
-	if code == "" {
-		return nil, fmt.Errorf("%w, invalid code", entity.ErrorUnauthorized)
+func (d *discordUsecase) ExchangeCodeForToken(ctx context.Context, req *entity.OauthCallbackRequest) (*entity.AccessToken, error) {
+	if err := req.Validate(); err != nil {
+		return nil, fmt.Errorf("%w, %w", entity.ErrorUnauthorized, err)
 	}
 
-	accessToken, err := d.DiscordRepository.GetToken(ctx, code)
-	if err != nil {
-		return nil, err
-	}
-
-	return accessToken, nil
+	return d.DiscordRepository.GetToken(ctx, req.Code, req.RequestURL)
 }
 
 func (d *discordUsecase) ExchangeRefreshForToken(ctx context.Context, req *entity.RefreshTokenRequest) (*entity.AccessToken, error) {
@@ -44,12 +39,7 @@ func (d *discordUsecase) ExchangeRefreshForToken(ctx context.Context, req *entit
 		return nil, fmt.Errorf("%w, %w", entity.ErrorUnauthorized, err)
 	}
 
-	accessToken, err := d.DiscordRepository.GetTokenByRefresh(ctx, req.RefreshToken)
-	if err != nil {
-		return nil, err
-	}
-
-	return accessToken, nil
+	return d.DiscordRepository.GetTokenByRefresh(ctx, req.RefreshToken)
 }
 
 func (d *discordUsecase) RevokeToken(ctx context.Context, req *entity.RevokeTokenRequest) error {
