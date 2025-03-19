@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mocha-bot/mochus/config"
 	"github.com/mocha-bot/mochus/core/module"
-	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
+	cookiey "github.com/mocha-bot/mochus/pkg/cookiey"
 )
 
 type discordHandler struct {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mocha-bot/mochus/core/entity"
-	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
+	cookiey "github.com/mocha-bot/mochus/pkg/cookiey"
 	"github.com/mocha-bot/mochus/pkg/echoy"
 	zLog "github.com/rs/zerolog/log"
 )
@@ -26,15 +26,21 @@ func parseOauthCallbackRequest(c echo.Context) (*entity.OauthCallbackRequest, er
 	}
 
 	redirectURL := parsedURL.Query().Get(RedirectURLKey)
-	if redirectURL == "" {
-		return nil, fmt.Errorf("%w: %s", entity.ErrorBind, "redirect_url is required")
+
+	// Construct the final URL for the request URL
+	// Discord known this as a redirect_uri to verify the request
+	finalURL := url.URL{
+		Scheme: echoy.GetScheme(c),
+		Host:   c.Request().Host,
+		Path:   c.Request().URL.Path,
 	}
 
-	finalURL := url.URL{
-		Scheme:   echoy.GetScheme(c),
-		Host:     c.Request().Host,
-		Path:     c.Request().URL.Path,
-		RawQuery: url.Values{RedirectURLKey: {redirectURL}}.Encode(),
+	// The redirect URL is optional for the client redirection
+	// If it's not provided, the fallback host will be used
+	if redirectURL == "" {
+		req.RedirectURL = c.Request().Header.Get("X-Fallback-Host")
+	} else {
+		finalURL.RawQuery = url.Values{RedirectURLKey: {req.RedirectURL}}.Encode()
 	}
 
 	req.RequestURL, err = url.QueryUnescape(finalURL.String())

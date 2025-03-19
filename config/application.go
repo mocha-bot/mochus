@@ -27,6 +27,9 @@ type AppConfig struct {
 	CORSAllowOrigins     []string `env:"APP_CORS_ALLOW_ORIGINS" envSeparator:"," envDefault:"*.mocha-bot.xyz,mocha-bot.xyz"`
 	CORSAllowMethods     []string `env:"APP_CORS_ALLOW_METHODS" envSeparator:"," envDefault:"GET,POST,PUT,DELETE,OPTIONS"`
 	CORSAllowCredentials bool     `env:"APP_CORS_ALLOW_CREDENTIALS" envDefault:"true"`
+
+	// Fallback Redirect
+	FallbackRedirect string `env:"APP_FALLBACK_REDIRECT" envDefault:"https://mocha-bot.xyz"`
 }
 
 func (a AppConfig) GetAddress() string {

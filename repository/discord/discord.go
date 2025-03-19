@@ -24,7 +24,7 @@ func NewDiscordRepository(cfg config.DiscordConfig) repository.DiscordRepository
 	}
 }
 
-func (d *discordRepository) GetToken(ctx context.Context, code, redirectURL string) (*entity.AccessToken, error) {
+func (d *discordRepository) GetToken(ctx context.Context, code, requestURL string) (*entity.AccessToken, error) {
 	var response AccessTokenResponse
 
 	headers := map[string]string{
@@ -34,7 +34,7 @@ func (d *discordRepository) GetToken(ctx context.Context, code, redirectURL stri
 	payload := map[string]string{
 		"grant_type":   GrantTypeAuthorizationCode,
 		"code":         code,
-		"redirect_uri": redirectURL,
+		"redirect_uri": requestURL,
 	}
 
 	req := d.client.R().

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	cookiey "github.com/mocha-bot/mochus/pkg/cookie"
+	cookiey "github.com/mocha-bot/mochus/pkg/cookiey"
 )
 
 const (
