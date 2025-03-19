@@ -10,6 +10,7 @@ import (
 	"github.com/mocha-bot/mochus/config"
 	"github.com/mocha-bot/mochus/core/entity"
 	repository "github.com/mocha-bot/mochus/core/repository/discord"
+	zLog "github.com/rs/zerolog/log"
 )
 
 type discordRepository struct {
@@ -56,6 +57,7 @@ func (d *discordRepository) GetToken(ctx context.Context, code, requestURL strin
 		}
 
 		if resp.StatusCode == http.StatusBadRequest {
+			zLog.Error().Err(err).Interface("response", resp).Str("function", "GetToken").Msg("error bad request")
 			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
 		}
 
@@ -96,6 +98,7 @@ func (d *discordRepository) GetTokenByRefresh(ctx context.Context, refreshToken 
 		}
 
 		if resp.StatusCode == http.StatusBadRequest {
+			zLog.Error().Err(err).Interface("response", resp).Str("function", "GetTokenByRefresh").Msg("error bad request")
 			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
 		}
 
@@ -130,6 +133,7 @@ func (d *discordRepository) RevokeToken(ctx context.Context, request *entity.Rev
 		}
 
 		if resp.StatusCode == http.StatusBadRequest {
+			zLog.Error().Err(err).Interface("response", resp).Str("function", "RevokeToken").Msg("error bad request")
 			return fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
 		}
 
