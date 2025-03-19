@@ -57,7 +57,7 @@ func (d *discordRepository) GetToken(ctx context.Context, code, requestURL strin
 		}
 
 		if resp.StatusCode == http.StatusBadRequest {
-			zLog.Error().Err(err).Interface("response", resp).Str("function", "GetToken").Msg("error bad request")
+			zLog.Error().Err(err).Interface("response", response).Str("function", "GetToken").Msg("error bad request")
 			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
 		}
 
@@ -98,7 +98,7 @@ func (d *discordRepository) GetTokenByRefresh(ctx context.Context, refreshToken 
 		}
 
 		if resp.StatusCode == http.StatusBadRequest {
-			zLog.Error().Err(err).Interface("response", resp).Str("function", "GetTokenByRefresh").Msg("error bad request")
+			zLog.Error().Err(err).Interface("response", response).Str("function", "GetTokenByRefresh").Msg("error bad request")
 			return nil, fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
 		}
 
@@ -133,7 +133,7 @@ func (d *discordRepository) RevokeToken(ctx context.Context, request *entity.Rev
 		}
 
 		if resp.StatusCode == http.StatusBadRequest {
-			zLog.Error().Err(err).Interface("response", resp).Str("function", "RevokeToken").Msg("error bad request")
+			zLog.Error().Err(err).Interface("response", response).Str("function", "RevokeToken").Msg("error bad request")
 			return fmt.Errorf("%w: %v", entity.ErrorBadRequest, response.HTTPResponse.Error)
 		}
 
