@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +14,7 @@ import (
 	"github.com/mocha-bot/mochus/core/module"
 	http_handler "github.com/mocha-bot/mochus/handler/http"
 	http_middleware "github.com/mocha-bot/mochus/handler/http/middleware"
+	infrastructure_logger "github.com/mocha-bot/mochus/infrastructure/logger"
 	discord_repository "github.com/mocha-bot/mochus/repository/discord"
 	zLog "github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -35,8 +35,16 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	zLog.Logger = infrastructure_logger.NewLogger(
+		infrastructure_logger.WithConsole(cfg.Logger.ConsoleLogEnabled),
+		infrastructure_logger.WithFile(cfg.Logger.FileLogEnabled),
+		infrastructure_logger.WithLoggerConfig(&cfg.Logger),
+	)
+
 	e := echo.New()
-	e.Logger.SetLevel(log.LstdFlags)
+	e.HideBanner = true
+	e.HidePort = true
+	e.Logger.SetOutput(zLog.Logger)
 
 	CORS := http_middleware.CORS(
 		http_middleware.WithAllowOrigins(cfg.App.CORSAllowOrigins),
@@ -45,9 +53,12 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 	)
 
 	e.Use(
+		middleware.Recover(),
+		middleware.RequestID(),
+		middleware.Secure(),
+		middleware.RequestLoggerWithConfig(http_middleware.RequestLoggerWithZerolog()),
 		CORS,
 		http_middleware.FallbackRedirect(cfg.App.FallbackRedirect),
-		middleware.RequestID(),
 	)
 
 	discordRepository := discord_repository.NewDiscordRepository(cfg.Discord)
@@ -84,7 +95,7 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 			err = e.Start(cfg.App.GetAddress())
 		}
 
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			zLog.Fatal().Err(err).Msg("error starting server")
 		}
 	}()
@@ -96,6 +107,8 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	zLog.Info().Msg("Shutting down server")
 
 	return e.Shutdown(ctx)
 }

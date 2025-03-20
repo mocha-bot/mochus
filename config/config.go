@@ -6,6 +6,7 @@ type Config struct {
 	Database DatabaseConfig
 	Discord  DiscordConfig
 	Redis    RedisConfig
+	Logger   LoggerConfig
 	App      AppConfig
 }
 
