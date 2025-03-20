@@ -41,6 +41,7 @@ func parseOauthCallbackRequest(c echo.Context) (*entity.OauthCallbackRequest, er
 		req.RedirectURL = c.Request().Header.Get("X-Fallback-Host")
 	} else {
 		finalURL.RawQuery = url.Values{RedirectURLKey: {req.RedirectURL}}.Encode()
+		finalURL.Fragment = ""
 	}
 
 	req.RequestURL, err = url.QueryUnescape(finalURL.String())
