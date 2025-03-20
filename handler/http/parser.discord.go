@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mocha-bot/mochus/core/entity"
 	cookiey "github.com/mocha-bot/mochus/pkg/cookiey"
-	"github.com/mocha-bot/mochus/pkg/echoy"
 	zLog "github.com/rs/zerolog/log"
 )
 
@@ -30,7 +29,7 @@ func parseOauthCallbackRequest(c echo.Context) (*entity.OauthCallbackRequest, er
 	// Construct the final URL for the request URL
 	// Discord known this as a redirect_uri to verify the request
 	finalURL := url.URL{
-		Scheme: echoy.GetScheme(c),
+		Scheme: c.Scheme(),
 		Host:   c.Request().Host,
 		Path:   c.Request().URL.Path,
 	}
