@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mocha-bot/mochus/core/entity"
-	repository "github.com/mocha-bot/mochus/core/repository/discord"
+	repository "github.com/mocha-bot/mochus/core/repository"
 )
 
 type DiscordUsecase interface {

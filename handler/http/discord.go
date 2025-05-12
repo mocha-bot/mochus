@@ -15,6 +15,9 @@ type discordHandler struct {
 }
 
 type DiscordHandler interface {
+	// Register the routes for the Discord handler
+	Register(e *echo.Echo)
+
 	OauthCallback(c echo.Context) error
 	RefreshToken(c echo.Context) error
 	RevokeToken(c echo.Context) error
@@ -26,6 +29,17 @@ func NewDiscordHandler(cfg config.Config, discordUsecase module.DiscordUsecase) 
 		cfg:            cfg,
 		discordUsecase: discordUsecase,
 	}
+}
+
+func (d *discordHandler) Register(e *echo.Echo) {
+	apiV1 := e.Group("/api/v1")
+
+	authRoute := apiV1.Group("/auth/discord")
+
+	authRoute.GET("/callback", d.OauthCallback)
+	authRoute.POST("/refresh", d.RefreshToken)
+	authRoute.POST("/revoke", d.RevokeToken)
+	authRoute.GET("/user", d.GetUserByToken)
 }
 
 func (d *discordHandler) OauthCallback(c echo.Context) error {

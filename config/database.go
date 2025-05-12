@@ -9,12 +9,13 @@ import (
 )
 
 type DatabaseConfig struct {
-	Host     string `env:"DB_HOST" envDefault:"localhost"`
-	Port     uint   `env:"DB_PORT" envDefault:"3306"`
-	Username string `env:"DB_USERNAME" envDefault:"root"`
-	Password string `env:"DB_PASSWORD" envDefault:""`
-	Schema   string `env:"DB_SCHEMA" envDefault:""`
-	Dialect  string `env:"DB_DIALECT" envDefault:"mysql"`
+	Host     string `env:"DATABASE_HOST" envDefault:"localhost"`
+	Port     uint   `env:"DATABASE_PORT" envDefault:"3306"`
+	Username string `env:"DATABASE_USERNAME" envDefault:"root"`
+	Password string `env:"DATABASE_PASSWORD" envDefault:""`
+	Schema   string `env:"DATABASE_SCHEMA" envDefault:""`
+	Debug    bool   `env:"DATABASE_DEBUG" envDefault:"false"`
+	Dialect  string `env:"DATABASE_DIALECT" envDefault:"mysql"`
 }
 
 const (

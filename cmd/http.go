@@ -14,8 +14,10 @@ import (
 	"github.com/mocha-bot/mochus/core/module"
 	http_handler "github.com/mocha-bot/mochus/handler/http"
 	http_middleware "github.com/mocha-bot/mochus/handler/http/middleware"
+	"github.com/mocha-bot/mochus/infrastructure/database"
 	infrastructure_logger "github.com/mocha-bot/mochus/infrastructure/logger"
 	discord_repository "github.com/mocha-bot/mochus/repository/discord"
+	user_repository "github.com/mocha-bot/mochus/repository/user"
 	zLog "github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +43,11 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 		infrastructure_logger.WithLoggerConfig(&cfg.Logger),
 	)
 
+	db, err := database.NewGORMDatabase(&cfg.Database)
+	if err != nil {
+		return err
+	}
+
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
@@ -61,17 +68,21 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 		http_middleware.FallbackRedirect(cfg.App.FallbackRedirect),
 	)
 
+	// Initialize repositories
 	discordRepository := discord_repository.NewDiscordRepository(cfg.Discord)
+	userRepository := user_repository.NewUserRepository(db.DatabaseClient)
+
+	// Initialize modules
 	discordUsecase := module.NewDiscordUsecase(discordRepository)
+	userMod := module.NewUserUsecase(userRepository)
+
+	// Initialize handlers
 	discordHandler := http_handler.NewDiscordHandler(cfg, discordUsecase)
+	userHandler := http_handler.NewUserHandler(userMod)
 
-	apiV1 := e.Group("/api/v1")
-
-	authRoute := apiV1.Group("/auth/discord")
-	authRoute.GET("/callback", discordHandler.OauthCallback)
-	authRoute.POST("/refresh", discordHandler.RefreshToken)
-	authRoute.POST("/revoke", discordHandler.RevokeToken)
-	authRoute.GET("/user", discordHandler.GetUserByToken)
+	// Register routes
+	discordHandler.Register(e)
+	userHandler.Register(e)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, "mochus is healthy")
@@ -107,6 +118,12 @@ func serveHTTP(cmd *cobra.Command, args []string) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	if err := db.Close(); err != nil {
+		zLog.Error().Err(err).Msg("Failed to close database connection")
+	} else {
+		zLog.Info().Msg("Database connection closed successfully")
+	}
 
 	zLog.Info().Msg("Shutting down server")
 

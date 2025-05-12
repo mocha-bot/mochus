@@ -9,7 +9,7 @@ import (
 	"github.com/imroc/req/v3"
 	"github.com/mocha-bot/mochus/config"
 	"github.com/mocha-bot/mochus/core/entity"
-	repository "github.com/mocha-bot/mochus/core/repository/discord"
+	repository "github.com/mocha-bot/mochus/core/repository"
 	zLog "github.com/rs/zerolog/log"
 )
 
