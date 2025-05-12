@@ -76,8 +76,8 @@ func (r *UserRepository) GetUserConnections(ctx context.Context, userID string) 
 	}
 
 	connections := make([]*entity.Connection, len(connectionDTOs))
-	for _, dto := range connectionDTOs {
-		connections = append(connections, dto.ToConnectionEntity())
+	for i, dto := range connectionDTOs {
+		connections[i] = dto.ToConnectionEntity()
 	}
 
 	return connections, nil
