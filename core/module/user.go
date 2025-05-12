@@ -2,6 +2,7 @@ package module
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/mocha-bot/mochus/core/entity"
@@ -83,11 +84,16 @@ func (m *UserUsecase) UnblockUser(ctx context.Context, id string) error {
 }
 
 func (m *UserUsecase) LinkConnection(ctx context.Context, userID string, providerName string, providerID string, metadata string) error {
+	var metadataMap map[string]any
+	if err := json.Unmarshal([]byte(metadata), &metadataMap); err != nil {
+		return err
+	}
+
 	connection := &entity.Connection{
 		UserID:       userID,
 		ProviderName: providerName,
 		ProviderID:   providerID,
-		Metadata:     metadata,
+		Metadata:     metadataMap,
 		IsActive:     true,
 	}
 
